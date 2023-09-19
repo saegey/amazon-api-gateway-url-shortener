@@ -53,7 +53,7 @@ Conditions:
 ##   Template Resources                                                                          ##
 ###################################################################################################
 Resources:
-  ##   API Gateway                                                                                 
+  ##   API Gateway
   SiteAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -61,15 +61,15 @@ Resources:
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
       MethodSettings:
-        - HttpMethod: "*"
-          ResourcePath: "/*"
+        - HttpMethod: '*'
+          ResourcePath: '/*'
           LoggingLevel: INFO
           DataTraceEnabled: true
           MetricsEnabled: true
           ThrottlingRateLimit: 2000
           ThrottlingBurstLimit: 1000
-        - HttpMethod: "GET"
-          ResourcePath: "/{linkId}"
+        - HttpMethod: 'GET'
+          ResourcePath: '/{linkId}'
           ThrottlingRateLimit: 10000
           ThrottlingBurstLimit: 4000
       DefinitionBody:
@@ -98,48 +98,48 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-  
+
   ##   Cognito user pool
   UserPool:
-    Type: AWS::Cognito::UserPool 
-    Properties: 
-      UserPoolName: !Sub ${AppName}-UserPool 
-      Policies: 
-        PasswordPolicy: 
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AppName}-UserPool
+      Policies:
+        PasswordPolicy:
           MinimumLength: 8
       AutoVerifiedAttributes:
         - email
-      UsernameAttributes: 
-        - email 
-      Schema: 
-        - AttributeDataType: String 
-          Name: email 
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
           Required: false
 
   ##   Cognito user pool domain
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
-    Properties: 
+    Properties:
       Domain: !Sub ${AppName}-${AWS::AccountId}
       UserPoolId: !Ref UserPool
 
   ##   Cognito user pool client
   UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient 
-    Properties: 
-      UserPoolId: !Ref UserPool 
-      ClientName: !Sub ${AppName}-UserPoolClient 
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub ${AppName}-UserPoolClient
       GenerateSecret: false
       SupportedIdentityProviders:
         - COGNITO
       CallbackURLs:
-        - !Join [ ".", [ https://master, !GetAtt AmplifyApp.DefaultDomain ]]
-        - !If [IsLocal, http://localhost:8080, !Ref "AWS::NoValue"]
-        - !If [HasCustomDomain, !Ref CustomDomain, !Ref "AWS::NoValue"]
+        - !Join ['.', [https://master, !GetAtt AmplifyApp.DefaultDomain]]
+        - !If [IsLocal, http://localhost:8080, !Ref 'AWS::NoValue']
+        - !If [HasCustomDomain, !Ref CustomDomain, !Ref 'AWS::NoValue']
       LogoutURLs:
-        - !Join [ ".", [ https://master, !GetAtt AmplifyApp.DefaultDomain ]]
-        - !If [IsLocal, http://localhost:8080, !Ref "AWS::NoValue"]
-        - !If [HasCustomDomain, !Ref CustomDomain, !Ref "AWS::NoValue"]
+        - !Join ['.', [https://master, !GetAtt AmplifyApp.DefaultDomain]]
+        - !If [IsLocal, http://localhost:8080, !Ref 'AWS::NoValue']
+        - !If [HasCustomDomain, !Ref CustomDomain, !Ref 'AWS::NoValue']
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
         - code
@@ -150,30 +150,31 @@ Resources:
   ##   CloudFront distribution
   CloudFrontDistro:
     Type: AWS::CloudFront::Distribution
-    Properties: 
+    Properties:
       DistributionConfig:
         Comment: URL Shortener CDN
         DefaultCacheBehavior:
-          AllowedMethods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-          CachedMethods: ["GET", "HEAD", "OPTIONS"]
+          AllowedMethods:
+            ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+          CachedMethods: ['GET', 'HEAD', 'OPTIONS']
           Compress: true
           DefaultTTL: 0
           ForwardedValues:
             Headers:
-            - Access-Control-Request-Headers
-            - Access-Control-Request-Method
-            - Origin
-            - Authorization
+              - Access-Control-Request-Headers
+              - Access-Control-Request-Method
+              - Origin
+              - Authorization
             QueryString: false
-          TargetOriginId: "URLShortenerAPIGW"
+          TargetOriginId: 'URLShortenerAPIGW'
           ViewerProtocolPolicy: redirect-to-https
         CustomErrorResponses:
-        - ErrorCachingMinTTL: 0
-          ErrorCode: 400
-        - ErrorCachingMinTTL: 1
-          ErrorCode: 403
-        - ErrorCachingMinTTL: 5
-          ErrorCode: 500
+          - ErrorCachingMinTTL: 0
+            ErrorCode: 400
+          - ErrorCachingMinTTL: 1
+            ErrorCode: 403
+          - ErrorCachingMinTTL: 5
+            ErrorCode: 500
         Logging:
           Bucket: !GetAtt CloudFrontAccessLogsBucket.DomainName
         Enabled: true
@@ -181,12 +182,16 @@ Resources:
           - CustomOriginConfig:
               OriginProtocolPolicy: https-only
             DomainName: !Sub ${SiteAPI}.execute-api.${AWS::Region}.amazonaws.com
-            Id: "URLShortenerAPIGW"
+            Id: 'URLShortenerAPIGW'
             OriginPath: /Prod
 
   ##   CloudFront access logs storage
   CloudFrontAccessLogsBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
 
   ##   Amplify Application for hosting
   AmplifyApp:
@@ -225,60 +230,58 @@ Resources:
       Description: Master Branch
       EnableAutoBuild: true
 
-###################################################################################################
-##   IAM Roles                                                                                   ##
-###################################################################################################
+  ###################################################################################################
+  ##   IAM Roles                                                                                   ##
+  ###################################################################################################
 
   ##   Dynamo DB Read Role
   DDBReadRole:
-    Type: "AWS::IAM::Role"
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: 'Allow'
             Principal:
-              Service: "apigateway.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
+              Service: 'apigateway.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
       Policies:
         - PolicyName: DDBReadPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               Action:
-              - dynamodb:GetItem
-              - dynamodb:Scan
-              - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:Scan
+                - dynamodb:Query
               Effect: Allow
               Resource:
                 - !GetAtt LinkTable.Arn
                 - !Sub
                   - ${TableArn}/index/*
-                  - {TableArn: !GetAtt LinkTable.Arn}
+                  - { TableArn: !GetAtt LinkTable.Arn }
 
   ##   Dynamo DB Read/Write Role
   DDBCrudRole:
-    Type: "AWS::IAM::Role"
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: 'Allow'
             Principal:
-              Service: "apigateway.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
+              Service: 'apigateway.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
       Policies:
         - PolicyName: DDBCrudPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               Action:
-              - dynamodb:DeleteItem
-              - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:UpdateItem
               Effect: Allow
               Resource: !GetAtt LinkTable.Arn
 
@@ -301,15 +304,15 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: "amplify:*"
-                Resource: "*"
+                Action: 'amplify:*'
+                Resource: '*'
 
-## CloudWatchRole for aws gateway account
+  ## CloudWatchRole for aws gateway account
   Account:
     Type: 'AWS::ApiGateway::Account'
     Properties:
       CloudWatchRoleArn: !GetAtt CloudWatchRole.Arn
-      
+
   CloudWatchRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -325,9 +328,9 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
 
-###################################################################################################
-##   Metrics outputs                                                                            ##
-###################################################################################################
+  ###################################################################################################
+  ##   Metrics outputs                                                                            ##
+  ###################################################################################################
 
   NotifyTopic:
     Type: AWS::SNS::Topic
@@ -335,98 +338,98 @@ Resources:
   APIGateway4xxAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "URL Shortener API 4xx Alarm"
-      AlarmDescription: "4xx monitor"
-      MetricName: "4XXError"
-      Namespace: "AWS/ApiGateway"
+      AlarmName: 'URL Shortener API 4xx Alarm'
+      AlarmDescription: '4xx monitor'
+      MetricName: '4XXError'
+      Namespace: 'AWS/ApiGateway'
       Dimensions:
-          - Name: "ApiName"
-            Value: "URL Shortener API"
-      Statistic: "Average"
+        - Name: 'ApiName'
+          Value: 'URL Shortener API'
+      Statistic: 'Average'
       Period: 60
       EvaluationPeriods: 1
       Threshold: .01
-      ComparisonOperator: "GreaterThanThreshold"
+      ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref NotifyTopic
 
   APIGateway5xxAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "URL Shortener API 5xx Alarm"
-      AlarmDescription: "5xx monitor"
-      MetricName: "5XXError"
-      Namespace: "AWS/ApiGateway"
+      AlarmName: 'URL Shortener API 5xx Alarm'
+      AlarmDescription: '5xx monitor'
+      MetricName: '5XXError'
+      Namespace: 'AWS/ApiGateway'
       Dimensions:
-          - Name: "ApiName"
-            Value: "URL Shortener API"
-      Statistic: "Average"
+        - Name: 'ApiName'
+          Value: 'URL Shortener API'
+      Statistic: 'Average'
       Period: 60
       EvaluationPeriods: 1
       Threshold: .01
-      ComparisonOperator: "GreaterThanThreshold"
+      ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref NotifyTopic
 
   APIGatewayLatencyAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "URL Shortener API Latency Alarm"
-      AlarmDescription: "Latency monitor"
-      MetricName: "Latency"
-      Namespace: "AWS/ApiGateway"
+      AlarmName: 'URL Shortener API Latency Alarm'
+      AlarmDescription: 'Latency monitor'
+      MetricName: 'Latency'
+      Namespace: 'AWS/ApiGateway'
       Dimensions:
-          - Name: "ApiName"
-            Value: "URL Shortener API"
-      ExtendedStatistic: "p99"
+        - Name: 'ApiName'
+          Value: 'URL Shortener API'
+      ExtendedStatistic: 'p99'
       Period: 300
       EvaluationPeriods: 1
       Threshold: 75
-      ComparisonOperator: "GreaterThanThreshold"
+      ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref NotifyTopic
 
   DDB5xxAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "URL Shortener DDB 5xx Alarm"
-      AlarmDescription: "System monitor"
-      MetricName: "SystemErrors"
-      Namespace: "AWS/DynamoDB"
+      AlarmName: 'URL Shortener DDB 5xx Alarm'
+      AlarmDescription: 'System monitor'
+      MetricName: 'SystemErrors'
+      Namespace: 'AWS/DynamoDB'
       Dimensions:
-          - Name: "TableName"
-            Value: !Ref LinkTable
-      Statistic: "Average"
+        - Name: 'TableName'
+          Value: !Ref LinkTable
+      Statistic: 'Average'
       Period: 60
       EvaluationPeriods: 1
       Threshold: .01
-      ComparisonOperator: "GreaterThanThreshold"
+      ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref NotifyTopic
 
   DDB4xxAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "URL Shortener DDB 4xx Alarm"
-      AlarmDescription: "User monitor"
-      MetricName: "UserErrors"
-      Namespace: "AWS/DynamoDB"
+      AlarmName: 'URL Shortener DDB 4xx Alarm'
+      AlarmDescription: 'User monitor'
+      MetricName: 'UserErrors'
+      Namespace: 'AWS/DynamoDB'
       Dimensions:
-          - Name: "TableName"
-            Value: !Ref LinkTable
-      Statistic: "Average"
+        - Name: 'TableName'
+          Value: !Ref LinkTable
+      Statistic: 'Average'
       Period: 60
       EvaluationPeriods: 1
       Threshold: .10
-      ComparisonOperator: "GreaterThanThreshold"
+      ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref NotifyTopic
 
   CloudFrontTotalErrorRateAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "Url Shortener CloudFront Errors"
-      AlarmDescription: "CDN error monitor"
+      AlarmName: 'Url Shortener CloudFront Errors'
+      AlarmDescription: 'CDN error monitor'
       MetricName: TotalErrorRate
       Namespace: AWS/CloudFront
       Dimensions:
@@ -443,8 +446,8 @@ Resources:
   CloudFrontTotalCacheHitRateAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: "Url Shortener CloudFront Cache Hit Rate"
-      AlarmDescription: "CDN eache monitor"
+      AlarmName: 'Url Shortener CloudFront Cache Hit Rate'
+      AlarmDescription: 'CDN eache monitor'
       MetricName: CacheHitRate
       Namespace: AWS/CloudFront
       Dimensions:
@@ -458,7 +461,6 @@ Resources:
       AlarmActions:
         - !Ref NotifyTopic
 
-
 ###################################################################################################
 ##   Template outputs                                                                            ##
 ###################################################################################################
@@ -470,30 +472,30 @@ Outputs:
 
   VueAppAPIRoot:
     Description: API Gateway endpoint URL for linker
-    Value: !Sub "https://${CloudFrontDistro.DomainName}"
- 
-  VueAppAuthDomain: 
+    Value: !Sub 'https://${CloudFrontDistro.DomainName}'
+
+  VueAppAuthDomain:
     Description: Domain used for authentication
     Value: !Sub https://${AppName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com
 
-  VueAppClientId: 
+  VueAppClientId:
     Description: Cognito User Pool Client Id
     Value: !Ref UserPoolClient
 
   ClientDomainAddress:
     Description: Domain for client
-    Value: !Join [ ".", [ https://master, !GetAtt AmplifyApp.DefaultDomain ]]
+    Value: !Join ['.', [https://master, !GetAtt AmplifyApp.DefaultDomain]]
 
   AmplifyAppId:
     Description: Amplify application ID
     Value: !GetAtt AmplifyApp.AppId
-  
+
   AmplifyEnvironmentUpdateCommand:
     Description: Command to add environment variables to the Amplify application
     Value: !Sub
       - aws amplify update-app --app-id ${AmplifyID} --environment-variables VUE_APP_NAME=${AppName},VUE_APP_CLIENT_ID=${UserPoolClient},VUE_APP_API_ROOT=${APIRoot},VUE_APP_AUTH_DOMAIN=${APIAuthDomain}
       - AmplifyID: !GetAtt AmplifyApp.AppId
-        APIRoot: !Join ["", [ "https://", !GetAtt CloudFrontDistro.DomainName]]
+        APIRoot: !Join ['', ['https://', !GetAtt CloudFrontDistro.DomainName]]
         APIAuthDomain: !Sub https://${AppName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com
 
   AmplifyDeployCommand:
